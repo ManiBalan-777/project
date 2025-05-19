@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Adm    in Dashboard - ProjectHub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+        <p class="text-gray-600 mt-2">Manage the ProjectHub platform</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Stats Card 1 -->
+        <div class="bg-white rounded-lg shadow-md p-6 card-3d">
+            <div class="flex items-center">
+                <div class="bg-indigo-100 p-3 rounded-full mr-4">
+                    <span class="material-icons text-indigo-600">people</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-500">Total Users</h3>
+                    <p class="text-2xl font-bold text-gray-800">{{ user_count }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Card 2 -->
+        <div class="bg-white rounded-lg shadow-md p-6 card-3d">
+            <div class="flex items-center">
+                <div class="bg-green-100 p-3 rounded-full mr-4">
+                    <span class="material-icons text-green-600">lightbulb</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-500">Total Projects</h3>
+                    <p class="text-2xl font-bold text-gray-800">{{ project_count }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Card 3 -->
+        <div class="bg-white rounded-lg shadow-md p-6 card-3d">
+            <div class="flex items-center">
+                <div class="bg-blue-100 p-3 rounded-full mr-4">
+                    <span class="material-icons text-blue-600">forum</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-500">Total Feedback</h3>
+                    <p class="text-2xl font-bold text-gray-800">{{ feedback_count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Recent Feedback Section -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-800">Recent Feedback</h2>
+            </div>
+            <div class="divide-y divide-gray-200">
+                {% for feedback in recent_feedbacks %}
+                <div class="p-6">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <span class="material-icons text-{% if feedback.sentiment == 'positive' %}green-500{% elif feedback.sentiment == 'negative' %}red-500{% else %}gray-500{% endif %}">
+                                {% if feedback.sentiment == 'positive' %}thumb_up{% elif feedback.sentiment == 'negative' %}thumb_down{% else %}chat_bubble{% endif %}
+                            </span>
+                        </div>
+                        <div class="ml-4 flex-1 min-w-0">
+                            <div class="flex justify-between">
+                                <p class="text-sm font-medium text-indigo-600 truncate">
+                                    {{ feedback.user.username }} on {{ feedback.project.title }}
+                                </p>
+                                <p class="text-sm text-gray-500 ml-2">
+                                    {{ feedback.created_at.strftime('%b %d') }}
+                                </p>
+                            </div>
+                            <p class="mt-1 text-sm text-gray-600">
+                                {{ feedback.comment }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-6 text-center text-gray-500">
+                    No recent feedback available
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Quick Actions Section -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-800">Quick Actions</h2>
+            </div>
+            <div class="p-6 space-y-4">
+                <a href="{{ url_for('create_user') }}" class="block p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-150">
+                    Create New User
+                </a>
+                <a href="{{ url_for('manage_users') }}" class="block p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-150">
+                    Manage Users
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

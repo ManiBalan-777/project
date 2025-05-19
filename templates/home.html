@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Home - Project Ideas Hub{% endblock %}
+
+{% block content %}
+<div class="gradient-bg text-white py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">
+            {% if user %}
+                Welcome, {{ user.username }}!
+            {% else %}
+                Welcome to Project Ideas Hub
+            {% endif %}
+        </h1>
+        <p class="text-lg md:text-xl max-w-2xl mx-auto mb-8">Discover and share innovative educational technology projects to inspire learning and creativity.</p>
+        <a href="{{ url_for('register') }}" class="bg-indigo-600 text-white py-3 px-6 rounded-md hover:bg-indigo-700 transition">Get Started</a>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Featured Projects</h2>
+        <p class="text-gray-600 max-w-2xl mx-auto">Explore innovative educational technology projects</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {% for project in featured_projects %}
+        <div id="project-{{ project.id }}" class="card-3d bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300">
+            <!-- Project Image -->
+            {% if project.image %}
+            <img src="{{ project.image }}" alt="{{ project.title }}" class="w-full h-48 object-cover cursor-pointer" 
+                 onclick="openModal('{{ project.id }}')">
+            {% else %}
+            <div class="w-full h-48 bg-indigo-100 flex items-center justify-center cursor-pointer" 
+                 onclick="openModal('{{ project.id }}')">
+                <span class="material-icons text-indigo-400 text-6xl">lightbulb</span>
+            </div>
+            {% endif %}
+            
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-2 cursor-pointer" 
+                    onclick="openModal('{{ project.id }}')">{{ project.title }}</h3>
+                <p class="text-gray-600 mb-4">{{ project.description[:100] }}...</p>
+                
+                <!-- View Details Button -->
+                <button onclick="openModal('{{ project.id }}')"
+                        class="w-full mb-3 bg-indigo-100 text-indigo-700 py-2 px-4 rounded-md hover:bg-indigo-200 transition">
+                    View Full Details
+                </button>
+                
+                <!-- Voting Section -->
+                <div class="flex justify-between items-center border-t pt-3">
+                    <div class="flex space-x-2">
+                        <a href="{{ url_for('vote', project_id=project.id, action='like') }}" 
+                           class="flex items-center text-green-500 hover:text-green-700">
+                            <span class="material-icons">thumb_up</span>
+                            <span class="ml-1">{{ project.votes|selectattr('is_like')|list|count }}</span>
+                        </a>
+                        <a href="{{ url_for('vote', project_id=project.id, action='dislike') }}" 
+                           class="flex items-center text-red-500 hover:text-red-700 ml-3">
+                            <span class="material-icons">thumb_down</span>
+                            <span class="ml-1">{{ project.votes|rejectattr('is_like')|list|count }}</span>
+                        </a>
+                    </div>
+                    <button data-feedback-id="feedback-{{ project.id }}"
+                            class="toggle-feedback text-indigo-600 hover:text-indigo-800 text-sm">
+                        Give Feedback
+                    </button>
+                </div>
+                
+                <!-- Feedback Form -->
+                <div id="feedback-{{ project.id }}" class="hidden mt-4 pt-4 border-t border-gray-200">
+                    <form action="{{ url_for('feedback', project_id=project.id) }}" method="POST" class="space-y-3">
+                        <textarea name="comment" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Share your thoughts..." required></textarea>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">
+                            Submit Feedback
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Project Details Modal -->
+<div id="projectModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" onclick="closeModal()">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen"></span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                        <div class="flex justify-between items-start">
+                            <h3 id="modalTitle" class="text-2xl leading-6 font-bold text-gray-900"></h3>
+                            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+                        <div class="mt-4">
+                            <img id="modalImage" src="" alt="" class="w-full h-48 object-cover mb-4 rounded-lg">
+                            <p id="modalDescription" class="text-gray-700 mb-4"></p>
+                            <h4 class="font-bold text-gray-800 mb-2">Detailed Idea:</h4>
+                            <p id="modalIdea" class="text-gray-600 whitespace-pre-line"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" onclick="closeModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Modal functions
+function openModal(projectId) {
+    const project = {
+        {% for project in featured_projects %}
+        '{{ project.id }}': {
+            title: `{{ project.title }}`,
+            description: `{{ project.description }}`,
+            idea: `{{ project.idea }}`,
+            image: `{{ project.image if project.image else '' }}`,
+            creator: `{{ project.creator.username }}`,
+            date: `{{ project.created_at.strftime('%B %d, %Y') }}`
+        },
+        {% endfor %}
+    }[projectId];
+
+    document.getElementById('modalTitle').textContent = project.title;
+    document.getElementById('modalDescription').textContent = project.description;
+    document.getElementById('modalIdea').textContent = project.idea;
+    document.getElementById('modalImage').src = project.image || '';
+    document.getElementById('modalImage').classList.toggle('hidden', !project.image);
+    document.getElementById('projectModal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeModal() {
+    document.getElementById('projectModal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+document.getElementById('projectModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+document.querySelectorAll('.toggle-feedback').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const feedbackId = this.getAttribute('data-feedback-id');
+        document.getElementById(feedbackId).classList.toggle('hidden');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Create Group - ProjectHub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Create a New Group</h1>
+        <p class="text-gray-600 mt-2">Start a new collaboration space for your project ideas</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-6">
+                {% for category, message in messages %}
+                    <div class="bg-{{ 'green' if category == 'success' else 'red' }}-100 border-l-4 border-{{ 'green' if category == 'success' else 'red' }}-500 text-{{ 'green' if category == 'success' else 'red' }}-700 p-4 rounded-lg mb-2">
+                        <p>{{ message }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Create Group Form -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form method="POST" action="{{ url_for('create_group') }}" enctype="multipart/form-data">
+            {{ form.csrf_token }}
+            <div class="mb-6">
+                <label for="group_name" class="block text-sm font-medium text-gray-700 mb-2">
+                    <span class="material-icons align-middle mr-1">group</span>
+                    Group Name
+                </label>
+                <input type="text" id="group_name" name="name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter group name" required>
+            </div>
+            <div class="mb-6">
+                <label for="group_description" class="block text-sm font-medium text-gray-700 mb-2">
+                    <span class="material-icons align-middle mr-1">description</span>
+                    Group Description
+                </label>
+                <textarea id="group_description" name="group_description" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" rows="4" placeholder="Describe the purpose of this group (optional)"></textarea>
+            </div>
+            <div class="mb-6">
+                <label for="image" class="block text-sm font-medium text-gray-700 mb-2">
+                    <span class="material-icons align-middle mr-1">image</span>
+                    Group Image (Optional)
+                </label>
+                <input type="file" id="image" name="image" accept="image/*" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <div class="flex justify-end space-x-4">
+                <a href="{{ url_for('view_groups') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <span class="material-icons mr-2">arrow_back</span>
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                    <span class="material-icons mr-2">add</span>
+                    Create Group
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Navigation -->
+    <div class="flex justify-center space-x-4 text-sm text-gray-600 mt-8">
+        <a href="{{ url_for('view_groups') }}" class="hover:text-indigo-600 flex items-center">
+            <span class="material-icons mr-1">group</span>
+            Groups
+        </a>
+        <a href="{{ url_for('dashboard') }}" class="hover:text-indigo-600 flex items-center">
+            <span class="material-icons mr-1">dashboard</span>
+            Dashboard
+        </a>
+        <a href="{{ url_for('logout') }}" class="hover:text-indigo-600 flex items-center">
+            <span class="material-icons mr-1">logout</span>
+            Logout
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Ideas Hub - {% block title %}{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Three.js for 3D elements -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* Custom 3D card effect */
+        .card-3d {
+            transition: transform 0.3s, box-shadow 0.3s;
+            transform-style: preserve-3d;
+        }
+        .card-3d:hover {
+            transform: translateY(-5px) rotateX(5deg);
+            box-shadow: 0 20px 30px rgba(0,0,0,0.2);
+        }
+        
+        /* Gradient background */
+        .gradient-bg {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+        }
+
+        /* Notification badge */
+        .notification-badge {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .notification-badge::after {
+            content: attr(data-count);
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 9999px;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: none;
+        }
+        .notification-badge[data-count="0"]::after {
+            display: none;
+        }
+        .notification-badge[data-count]:not([data-count="0"])::after {
+            display: block;
+        }
+    </style>
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col bg-gray-50">
+    <!-- 3D Background Element -->
+    <div id="3d-background" class="fixed top-0 left-0 w-full h-full -z-10"></div>
+    
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{{ url_for('home') }}" class="text-xl font-bold text-indigo-600 flex items-center">
+                        <span class="material-icons mr-2">lightbulb</span>
+                        ProjectHub
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center space-x-4">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('home') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">Home</a>
+                        <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">Dashboard</a>
+                        {% if current_user.is_admin %}
+                            <a href="{{ url_for('manage_users') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">User Management</a>
+                            <a href="{{ url_for('view_groups') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">Group Management</a>
+                            <a href="{{ url_for('chatbot') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">AI Assistant</a>
+                            {# Add link for Analytics if you have an analytics route #}
+                            {# <a href="{{ url_for('analytics') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">Analytics</a> #}
+                        {% else %}
+                            <a href="{{ url_for('index') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">Projects</a>
+                            <a href="{{ url_for('add_project') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">Create Projects</a>
+                            <a href="{{ url_for('view_groups') }}" class="notification-badge px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50" id="groups-nav-link" data-count="0">Groups</a>
+                            <a href="{{ url_for('create_group') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">Create Groups</a>
+                            <a href="{{ url_for('chatbot') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">AI Assistant</a>
+                        {% endif %}
+                        <a href="{{ url_for('logout') }}" class="px-3 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('home') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">Home</a>
+                        <a href="{{ url_for('admin_login') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">Admin Login</a>
+                        <a href="{{ url_for('login') }}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-50">Login</a>
+                        <a href="{{ url_for('register') }}" class="px-3 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700">Register</a>
+                    {% endif %}
+                </div>
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-900">
+                        <span class="material-icons">menu</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('home') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">Home</a>
+                    <a href="{{ url_for('dashboard') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">Dashboard</a>
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('manage_users') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">User Management</a>
+                        <a href="{{ url_for('view_groups') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">Group Management</a>
+                        <a href="{{ url_for('chatbot') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">AI Assistant</a>
+                        {# Add link for Analytics if you have an analytics route #}
+                        {# <a href="{{ url_for('analytics') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">Analytics</a> #}
+                    {% else %}
+                        <a href="{{ url_for('index') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">Projects</a>
+                        <a href="{{ url_for('add_project') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">Create Projects</a>
+                        <a href="{{ url_for('view_groups') }}" class="notification-badge block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50" id="mobile-groups-nav-link" data-count="0">Groups</a>
+                        <a href="{{ url_for('create_group') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">Create Groups</a>
+                        <a href="{{ url_for('chatbot') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">AI Assistant</a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="block px-3 py-2 rounded-md text-base font-medium bg-indigo-600 text-white hover:bg-indigo-700">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('admin_login') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">Admin Login</a>
+                    <a href="{{ url_for('login') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50">Login</a>
+                    <a href="{{ url_for('register') }}" class="block px-3 py-2 rounded-md text-base font-medium bg-indigo-600 text-white hover:bg-indigo-700">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Flash messages -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} p-4 mb-4 rounded-lg shadow-md">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <!-- Main content -->
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-bold mb-4">ProjectHub</h3>
+                    <p class="text-gray-300">A platform for sharing and discovering innovative project ideas in education technology.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="{{ url_for('home') }}" class="text-gray-300 hover:text-white">Home</a></li> {# Added home link in footer consistent with header #}
+                        {% if 'user_id' in session %}
+                            <li><a href="{{ url_for('dashboard') }}" class="text-gray-300 hover:text-white">Dashboard</a></li>
+                            <li><a href="{{ url_for('add_project') }}" class="text-gray-300 hover:text-white">Add Project</a></li>
+                        {% else %}
+                            <li><a href="{{ url_for('login') }}" class="text-gray-300 hover:text-white">Login</a></li>
+                            <li><a href="{{ url_for('register') }}" class="text-gray-300 hover:text-white">Register</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Connect</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
+                <p>© 2023 ProjectHub. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+        
+        // Simple 3D background effect
+        if (typeof THREE !== 'undefined') {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('3d-background').appendChild(renderer.domElement);
+            
+            const geometry = new THREE.TorusGeometry(10, 3, 16, 100);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0x6e8efb, 
+                wireframe: true,
+                transparent: true,
+                opacity: 0.2
+            });
+            const torus = new THREE.Mesh(geometry, material);
+            scene.add(torus);
+            
+            camera.position.z = 30;
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                torus.rotation.x += 0.001;
+                torus.rotation.y += 0.001;
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            window.addEventListener('resize', function() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        // Notification update function
+        function updateNotifications() {
+            {% if current_user.is_authenticated %}
+                fetch('/unread_messages')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const groupsLink = document.getElementById('groups-nav-link');
+                        const mobileGroupsLink = document.getElementById('mobile-groups-nav-link');
+                        if (groupsLink && mobileGroupsLink) {
+                            groupsLink.setAttribute('data-count', data.total_unread);
+                            mobileGroupsLink.setAttribute('data-count', data.total_unread);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching unread messages:', error);
+                    });
+            {% endif %}
+        }
+
+        // Initial call and periodic polling
+        document.addEventListener('DOMContentLoaded', function() {
+            updateNotifications();
+            setInterval(updateNotifications, 30000); // Poll every 30 seconds
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

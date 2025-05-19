@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Groups - ProjectHub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Groups</h1>
+        <p class="text-gray-600 mt-2">Join or create groups to collaborate on project ideas</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-6">
+                {% for category, message in messages %}
+                    <div class="bg-{{ 'green' if category == 'success' else 'red' }}-100 border-l-4 border-{{ 'green' if category == 'success' else 'red' }}-500 text-{{ 'green' if category == 'success' else 'red' }}-700 p-4 rounded-lg mb-2">
+                        <p>{{ message }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Create Group Button -->
+    <div class="mb-6 flex justify-end">
+        <a href="{{ url_for('create_group') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+            <span class="material-icons mr-2">add</span>
+            Create New Group
+        </a>
+    </div>
+
+    <!-- Groups List -->
+    <div class="grid grid-cols-1 gap-6">
+        {% if groups %}
+            {% for group in groups %}
+                <div class="bg-white rounded-lg shadow-md p-6 card-3d hover:shadow-lg transition">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3">
+                                <h3 class="text-lg font-medium text-indigo-600 hover:text-indigo-900">{{ group.name }}</h3>
+                                {% if group.id in user_groups %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Member
+                                    </span>
+                                {% endif %}
+                                {% if unread_counts[group.id] > 0 %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500 text-white">
+                                        {{ unread_counts[group.id] }} New
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <p class="mt-2 text-sm text-gray-500">
+                                {{ group.description[:150] if group.description is not none else 'No description provided.' }}{% if group.description and group.description|length > 150 %}...{% endif %}
+                            </p>
+                            <div class="mt-3 flex items-center text-sm text-gray-500">
+                                <span class="material-icons text-gray-400 text-sm mr-1">calendar_today</span>
+                                Created on {{ group.created_at.strftime('%b %d, %Y') }}
+                                <span class="ml-4">by {{ group.creator.username }}</span>
+                            </div>
+                            {% if group.id in invites %}
+                                <div class="mt-3">
+                                    <label class="text-sm font-medium text-gray-700">Invite Link:</label>
+                                    <div class="flex items-center mt-1">
+                                        <input type="text" value="{{ invites[group.id] }}" readonly class="w-full sm:w-96 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-600 bg-gray-50" style="max-width: 400px;">
+                                        <button onclick="copyLink('{{ invites[group.id] }}')" class="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" title="Copy Invite Link">
+                                            <span class="material-icons mr-1">content_copy</span>
+                                            Copy
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="ml-4 flex-shrink-0 flex space-x-2">
+                            {% if group.creator_id == user.id or user.is_admin %}
+                                <a href="{{ url_for('edit_group', group_id=group.id) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100" title="Edit Group">
+                                    <span class="material-icons mr-1">edit</span>
+                                    Edit
+                                </a>
+                            {% endif %}
+                            {% if group.id in user_groups %}
+                                <a href="{{ url_for('group_chat', group_id=group.id) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-indigo-600 bg-indigo-50 hover:bg-indigo-100" title="Group Chat">
+                                    <span class="material-icons mr-1">chat</span>
+                                    Chat
+                                </a>
+                                {% if group.creator_id != user.id %}
+                                    <a href="{{ url_for('leave_group', group_id=group.id) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-red-600 bg-red-50 hover:bg-red-100" title="Leave Group">
+                                        <span class="material-icons mr-1">exit_to_app</span>
+                                        Leave
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <a href="{{ url_for('join_group', group_id=group.id) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-green-600 bg-green-50 hover:bg-green-100" title="Join Group">
+                                    <span class="material-icons mr-1">group_add</span>
+                                    Join
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <div class="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="material-icons text-indigo-600 text-3xl">group</span>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-1">No groups yet</h3>
+                <p class="text-gray-500 mb-4">Be the first to create or join a group!</p>
+                <a href="{{ url_for('create_group') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                    <span class="material-icons mr-2">add</span>
+                    Create Group
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Navigation -->
+    <div class="flex justify-center space-x-4 text-sm text-gray-600 mt-8">
+        <a href="{{ url_for('dashboard') }}" class="hover:text-indigo-600 flex items-center">
+            <span class="material-icons mr-1">dashboard</span>
+            Dashboard
+        </a>
+        <a href="{{ url_for('logout') }}" class="hover:text-indigo-600 flex items-center">
+            <span class="material-icons mr-1">logout</span>
+            Logout
+        </a>
+    </div>
+</div>
+
+<script>
+    function copyLink(link) {
+        navigator.clipboard.writeText(link).then(() => {
+            alert('Invite link copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy link: ', err);
+            alert('Failed to copy link. Please select and copy manually.');
+        });
+    }
+</script>
+{% endblock %}

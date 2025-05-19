@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}AI Assistant - ProjectHub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Educational AI Assistant</h1>
+        <p class="text-gray-600 mt-2">Get help with your educational technology projects</p>
+    </div>
+    
+    <div class="card-3d bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="p-6">
+            <div class="flex items-center mb-6">
+                <div class="bg-indigo-100 p-2 rounded-full mr-4">
+                    <span class="material-icons text-indigo-600">smart_toy</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-800">Project Implementation Assistant</h3>
+                    <p class="text-sm text-gray-500">Ask about implementing educational technology projects</p>
+                </div>
+            </div>
+            
+            <div id="chat-container" class="h-96 overflow-y-auto mb-6 p-4 bg-gray-50 rounded-lg space-y-4">
+                <div class="flex justify-start">
+                    <div class="bg-indigo-100 p-3 rounded-lg max-w-xs md:max-w-md lg:max-w-lg">
+                        <p class="text-gray-800">Hello! I'm your educational AI assistant. How can I help you with your project today?</p>
+                    </div>
+                </div>
+            </div>
+            
+            <form id="chat-form" class="flex">
+                <input type="text" id="user-message" placeholder="Ask about implementing a project..." 
+                       class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <button type="submit" 
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-r-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <span class="material-icons">send</span>
+                </button>
+            </form>
+            
+            <div class="mt-4">
+                <p class="text-sm text-gray-500">Try asking:</p>
+                <div class="flex flex-wrap gap-2 mt-2">
+                    <button onclick="setPrompt('How to create a math learning app?')" 
+                            class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-gray-200">
+                        Math learning app
+                    </button>
+                    <button onclick="setPrompt('What technologies for VR education?')" 
+                            class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-gray-200">
+                        VR education
+                    </button>
+                    <button onclick="setPrompt('Ideas for coding education platform')" 
+                            class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-gray-200">
+                        Coding platform
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setPrompt(prompt) {
+    document.getElementById('user-message').value = prompt;
+}
+
+document.getElementById('chat-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const userMessage = document.getElementById('user-message').value;
+    if (!userMessage.trim()) return;
+    
+    const chatContainer = document.getElementById('chat-container');
+    
+    // Add user message
+    const userDiv = document.createElement('div');
+    userDiv.className = 'flex justify-end mb-4';
+    userDiv.innerHTML = `
+        <div class="bg-indigo-600 text-white p-3 rounded-lg max-w-xs md:max-w-md lg:max-w-lg">
+            <p>${userMessage}</p>
+        </div>
+    `;
+    chatContainer.appendChild(userDiv);
+    
+    // Add loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'flex justify-start mb-4';
+    loadingDiv.innerHTML = `
+        <div class="bg-indigo-100 p-3 rounded-lg max-w-xs md:max-w-md lg:max-w-lg">
+            <div class="flex items-center">
+                <div class="animate-spin mr-2">
+                    <span class="material-icons text-indigo-600">autorenew</span>
+                </div>
+                <p>Thinking...</p>
+            </div>
+        </div>
+    `;
+    chatContainer.appendChild(loadingDiv);
+    
+    // Scroll to bottom
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    // Clear input
+    document.getElementById('user-message').value = '';
+    
+    // Send to server
+    fetch("{{ url_for('chatbot') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `message=${encodeURIComponent(userMessage)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove loading indicator
+        chatContainer.removeChild(loadingDiv);
+        
+        // Add bot response
+        const botDiv = document.createElement('div');
+        botDiv.className = 'flex justify-start mb-4';
+        botDiv.innerHTML = `
+            <div class="bg-indigo-100 p-3 rounded-lg max-w-xs md:max-w-md lg:max-w-lg">
+                <p>${data.reply || data.error || 'Sorry, I encountered an error.'}</p>
+            </div>
+        `;
+        chatContainer.appendChild(botDiv);
+        
+        // Scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    })
+    .catch(error => {
+        // Remove loading indicator
+        chatContainer.removeChild(loadingDiv);
+        
+        // Add error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'flex justify-start mb-4';
+        errorDiv.innerHTML = `
+            <div class="bg-red-100 p-3 rounded-lg max-w-xs md:max-w-md lg:max-w-lg">
+                <p>Error: ${error.message}</p>
+            </div>
+        `;
+        chatContainer.appendChild(errorDiv);
+        
+        // Scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    });
+});
+</script>
+{% endblock %}

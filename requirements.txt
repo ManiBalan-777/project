@@ -1,0 +1,9 @@
+# Dev environment
+pip
+autopep8
+textblob
+# App
+flask-migrate
+flask-limiter
+flask
+wtforms
